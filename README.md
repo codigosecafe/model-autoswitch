@@ -19,7 +19,7 @@ Começa em **dry-run**: só mostra na linha de status o que faria. Quando confia
 No prompt do Claude Code:
 
 ```
-/plugin install model-autoswitch --marketplace <owner>/<repo>
+/plugin install model-autoswitch --marketplace codigosecafe/model-autoswitch
 ```
 
 Responda `y` para adicionar o marketplace e escolha o escopo. Depois ajuste as opções em `/config` (linhas `model-autoswitch.*`).
@@ -78,7 +78,7 @@ Claude Code plugin that switches the model (haiku, sonnet, opus) per prompt to c
 **Install:**
 
 ```
-/plugin install model-autoswitch --marketplace <owner>/<repo>
+/plugin install model-autoswitch --marketplace codigosecafe/model-autoswitch
 ```
 
 **Use:** `/autoswitch status | dry-run | on | off`. Options are listed in the table above and appear in `/config` as `model-autoswitch.*`.
