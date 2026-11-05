@@ -30,6 +30,17 @@
         "opus"
       ]
     },
+    "baselineModel": {
+      "type": "string",
+      "title": "Modelo de referência",
+      "description": "O modelo que você usaria sem o plugin; a economia é medida contra ele.",
+      "default": "opus",
+      "options": [
+        "haiku",
+        "sonnet",
+        "opus"
+      ]
+    },
     "minModel": {
       "type": "string",
       "title": "Modelo mais leve permitido",

@@ -8,6 +8,10 @@ declare module 'claude-code' {
         strikes: number
         switches: number
         estSavedUsd: number
+        turns: number
+        costUsd: number
+        baselineUsd: number
+        turnsByTier: { haiku: number; sonnet: number; opus: number }
       }
       /** Últimas decisões, mais recente primeiro. */
       log: string[]

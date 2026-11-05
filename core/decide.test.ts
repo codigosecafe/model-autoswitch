@@ -101,3 +101,8 @@ test('a context too big for haiku keeps sonnet as the floor', async () => {
   const d = decide(base({ prompt: 'git status', contextTokens: 300_000, cacheWarm: false }), auto, initialState())
   expect(d.target).toBe('sonnet')
 })
+
+test('the haiku floor explains itself in the reason', async () => {
+  const d = decide(base({ prompt: 'git status', contextTokens: 300_000 }), auto, initialState())
+  expect(d.reason).toMatch(/too big for haiku/)
+})

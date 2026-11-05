@@ -64,7 +64,10 @@ export function decide(
   }
   target = clamp(target, cfg.minTier, cfg.maxTier)
   // Haiku tem janela menor: com contexto grande, o piso é o Sonnet (margem conservadora).
-  if (target === 'haiku' && input.contextTokens > HAIKU_MAX_CONTEXT) target = 'sonnet'
+  if (target === 'haiku' && input.contextTokens > HAIKU_MAX_CONTEXT) {
+    target = 'sonnet'
+    why += ` (context ${Math.round(input.contextTokens / 1000)}k too big for haiku: sonnet floor)`
+  }
 
   if (target === current) return { ...keep(current, `${why}: already on ${current}`), source }
 
@@ -108,6 +111,7 @@ export const needsClassifier = (prompt: string, cfg: Config): boolean =>
 /** Atualiza o estado depois de um prompt tratado. */
 export function afterPrompt(state: State, prompt: string, d: Decision, didSwitch: boolean): State {
   return {
+    ...state,
     promptsSinceSwitch: didSwitch ? 0 : state.promptsSinceSwitch + 1,
     silenceLeft: Math.max(0, state.silenceLeft - 1),
     strikes: isRework(prompt) ? state.strikes + 1 : 0,

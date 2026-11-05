@@ -33,12 +33,17 @@ Responda `y` para adicionar o marketplace e escolha o escopo. Depois ajuste as o
 /autoswitch off        # desliga
 ```
 
+## Economia medida
+
+A cada turno da conversa principal o plugin soma o custo real (no modelo que rodou) e o custo dos mesmos tokens no `baselineModel`. O `/autoswitch status` mostra os dois e a diferença. São preços de lista aplicados aos tokens que a API reporta, então a fatura pode diferir (preço negociado, taxa por assento). Subagentes ficam fora da conta.
+
 ## Configuração
 
 | Opção | Padrão | O que faz |
 | --- | --- | --- |
 | `mode` | `dry-run` | `off`, `dry-run` ou `auto` |
 | `defaultModel` | `sonnet` | quando nada decide |
+| `baselineModel` | `opus` | modelo de referência: a economia é medida contra ele |
 | `minModel` / `maxModel` | `haiku` / `opus` | faixa permitida |
 | `contextLimit` | `120000` | contexto acima do qual a troca precisa compensar |
 | `cooldown` | `4` | prompts entre trocas |
@@ -83,4 +88,4 @@ Claude Code plugin that switches the model (haiku, sonnet, opus) per prompt to c
 
 **Use:** `/autoswitch status | dry-run | on | off`. Options are listed in the table above and appear in `/config` as `model-autoswitch.*`.
 
-**Limits:** savings are estimates from list prices and typical volumes; only the main session model is switched; the `core/` folder is agent-agnostic so a Codex adapter can reuse it later.
+**Limits:** measured savings use list prices on the tokens the API reports (your invoice may differ), the per-switch figure is an estimate; only the main session model is switched; the `core/` folder is agent-agnostic so a Codex adapter can reuse it later.

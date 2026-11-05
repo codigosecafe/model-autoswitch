@@ -7,7 +7,10 @@ import {
   TIERS,
   afterPrompt,
   decide,
+  addTurn,
   initialState,
+  normalizeState,
+  savedUsd,
   mergePrices,
   needsClassifier,
   onManualSwitch,
@@ -49,6 +52,7 @@ function readConfig(o: Readonly<Record<string, unknown>>): Config {
   return {
     mode: asMode(o.mode, d.mode),
     defaultTier: asTier(o.defaultModel, d.defaultTier),
+    baselineTier: asTier(o.baselineModel, d.baselineTier),
     minTier: asTier(o.minModel, d.minTier),
     maxTier: asTier(o.maxModel, d.maxTier),
     contextLimit: asNum(o.contextLimit, d.contextLimit),
@@ -76,6 +80,23 @@ export const register: Register = (on, options) => {
 
   on('turn.complete', async ($, e, next) => {
     lastTurnAt = await $.clock.now()
+    // Mede só a conversa principal: custo real no modelo usado e na referência.
+    const used = tierOf(e.usage?.model)
+    if (e.usage && used && !e.agentId) {
+      const cfg = await effective($, base)
+      const u = e.usage
+      await update($, stateAtom, s => {
+        const n = normalizeState(s)
+        const t = addTurn(
+          { turns: n.turns, costUsd: n.costUsd, baselineUsd: n.baselineUsd, turnsByTier: n.turnsByTier },
+          u,
+          used,
+          cfg.baselineTier,
+          prices,
+        )
+        return { ...n, ...t }
+      })
+    }
     return next(e)
   })
 
@@ -95,11 +116,13 @@ export const register: Register = (on, options) => {
     else if (arg === 'dry-run' || arg === 'dry') await update($, modeAtom, () => 'dry-run')
 
     const cfg = await effective($, base)
-    const s = await read($, stateAtom)
+    const s = normalizeState(await read($, stateAtom))
     const log = await read($, logAtom)
     const lines = [
       `autoswitch: modo ${cfg.mode}, padrão ${cfg.defaultTier}, faixa ${cfg.minTier} a ${cfg.maxTier}`,
-      `trocas: ${s.switches}, economia estimada: US$ ${s.estSavedUsd.toFixed(2)} (estimativa, não é fatura)`,
+      `trocas: ${s.switches}, turnos medidos: ${s.turns} (haiku ${s.turnsByTier.haiku}, sonnet ${s.turnsByTier.sonnet}, opus ${s.turnsByTier.opus})`,
+      `custo real: US$ ${s.costUsd.toFixed(2)} | no ${cfg.baselineTier}: US$ ${s.baselineUsd.toFixed(2)} | economia medida: US$ ${savedUsd(s).toFixed(2)} (preços de lista; a fatura pode diferir)`,
+      `economia estimada nas trocas: US$ ${s.estSavedUsd.toFixed(2)}`,
       ...(log.length ? ['últimas decisões:', ...log.slice(0, 8).map(l => `  ${l}`)] : []),
     ]
     return { text: lines.join('\n') }
@@ -116,7 +139,7 @@ export const register: Register = (on, options) => {
       const current = tierOf(await $.session.model())
       const usage = await $.session.usage()
       const now = await $.clock.now()
-      const state = await read($, stateAtom)
+      const state = normalizeState(await read($, stateAtom))
 
       let classified: Complexity | undefined
       if (needsClassifier(e.text, cfg)) {

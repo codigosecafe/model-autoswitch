@@ -23,6 +23,8 @@ export type Config = {
   maxTier: Tier
   /** Acima deste contexto (tokens) com cache quente, só troca se compensar. */
   contextLimit: number
+  /** Modelo de referência para medir a economia (o que você usaria sem o plugin). */
+  baselineTier: Tier
   /** Prompts mínimos entre duas trocas. */
   cooldown: number
   /** Prompts em silêncio depois de o usuário trocar o modelo na mão. */
@@ -40,6 +42,11 @@ export type State = {
   switches: number
   /** Economia estimada acumulada, em US$ (estimativa, não é fatura). */
   estSavedUsd: number
+  /** Medição real por turno: custo no modelo usado e na referência. */
+  turns: number
+  costUsd: number
+  baselineUsd: number
+  turnsByTier: Record<Tier, number>
 }
 
 export type Input = {
@@ -64,6 +71,7 @@ export type Decision = {
 export const DEFAULT_CONFIG: Config = {
   mode: 'dry-run',
   defaultTier: 'sonnet',
+  baselineTier: 'opus',
   minTier: 'haiku',
   maxTier: 'opus',
   contextLimit: 120_000,
@@ -80,4 +88,14 @@ export const initialState = (): State => ({
   strikes: 0,
   switches: 0,
   estSavedUsd: 0,
+  turns: 0,
+  costUsd: 0,
+  baselineUsd: 0,
+  turnsByTier: { haiku: 0, sonnet: 0, opus: 0 },
 })
+
+/** Estado salvo por uma versão anterior pode não ter os campos novos: completa com os iniciais. */
+export const normalizeState = (raw: Partial<State> | undefined): State => {
+  const d = initialState()
+  return { ...d, ...raw, turnsByTier: { ...d.turnsByTier, ...(raw?.turnsByTier ?? {}) } }
+}
