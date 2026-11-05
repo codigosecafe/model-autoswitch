@@ -1,0 +1,98 @@
+{
+  "name": "model-autoswitch",
+  "version": "0.1.0",
+  "description": "Troca o modelo do Claude Code (haiku, sonnet, opus) por prompt para reduzir custo, protegendo o cache. Começa em dry-run.",
+  "author": {
+    "name": "Claudio Lino"
+  },
+  "license": "MIT",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "mode": {
+      "type": "string",
+      "title": "Modo",
+      "description": "off desliga; dry-run só avisa o que faria; auto troca sozinho.",
+      "default": "dry-run",
+      "options": [
+        "off",
+        "dry-run",
+        "auto"
+      ]
+    },
+    "defaultModel": {
+      "type": "string",
+      "title": "Modelo padrão",
+      "description": "Usado quando nenhuma regra nem o classificador decide.",
+      "default": "sonnet",
+      "options": [
+        "haiku",
+        "sonnet",
+        "opus"
+      ]
+    },
+    "minModel": {
+      "type": "string",
+      "title": "Modelo mais leve permitido",
+      "description": "Nunca desce abaixo deste.",
+      "default": "haiku",
+      "options": [
+        "haiku",
+        "sonnet",
+        "opus"
+      ]
+    },
+    "maxModel": {
+      "type": "string",
+      "title": "Modelo mais pesado permitido",
+      "description": "Nunca sobe acima deste.",
+      "default": "opus",
+      "options": [
+        "haiku",
+        "sonnet",
+        "opus"
+      ]
+    },
+    "contextLimit": {
+      "type": "number",
+      "title": "Limite de contexto (tokens)",
+      "description": "Acima disso, com cache quente, só troca se a economia estimada superar o custo de recache.",
+      "default": 120000
+    },
+    "cooldown": {
+      "type": "number",
+      "title": "Intervalo entre trocas (prompts)",
+      "description": "Prompts mínimos entre duas trocas automáticas.",
+      "default": 4
+    },
+    "manualSilence": {
+      "type": "number",
+      "title": "Silêncio após /model manual (prompts)",
+      "description": "Depois que você troca o modelo na mão, o plugin não mexe por este número de prompts.",
+      "default": 6
+    },
+    "expectedTurns": {
+      "type": "number",
+      "title": "Turnos esperados",
+      "description": "Quantos turnos futuros assumir ao estimar a economia de uma troca.",
+      "default": 8
+    },
+    "useClassifier": {
+      "type": "boolean",
+      "title": "Usar classificador Haiku",
+      "description": "Em prompts sem regra, pergunta ao Haiku se a tarefa é simples, padrão ou difícil (custo desprezível).",
+      "default": true
+    },
+    "extraRules": {
+      "type": "string",
+      "title": "Regras extras",
+      "description": "Uma por linha: modelo[!]: regex. O ! marca regra forte. Ex.: haiku: ^status\\b",
+      "default": ""
+    },
+    "prices": {
+      "type": "string",
+      "title": "Preços (JSON opcional)",
+      "description": "Sobrescreve a tabela padrão, US$ por milhão. Ex.: {\"opus\":{\"output\":20}}",
+      "default": ""
+    }
+  }
+}
