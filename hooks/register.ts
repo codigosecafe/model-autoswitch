@@ -75,6 +75,15 @@ export const register: Register = (on, options) => {
       description: 'Troca automática de modelo para reduzir custo',
       argumentHint: '[on|off|dry-run|status]',
     })
+    await $.tool.register({
+      name: 'autoswitch',
+      description: 'Mostra o status do model-autoswitch ou muda o modo (on, off, dry-run). Use quando o usuário pedir /autoswitch.',
+      inputSchema: {
+        type: 'object',
+        properties: { action: { type: 'string', enum: ['status', 'on', 'off', 'dry-run'] } },
+      },
+      isDeferred: false,
+    })
     return next(e)
   })
 
@@ -109,23 +118,12 @@ export const register: Register = (on, options) => {
     return next(e)
   })
 
-  on('command.run', { command: 'autoswitch' }, async ($, e) => {
-    const arg = e.args.trim().toLowerCase()
-    if (arg === 'on' || arg === 'auto') await update($, modeAtom, () => 'auto')
-    else if (arg === 'off') await update($, modeAtom, () => 'off')
-    else if (arg === 'dry-run' || arg === 'dry') await update($, modeAtom, () => 'dry-run')
+  on('command.run', { command: 'autoswitch' }, async ($, e) => ({ text: await runAutoswitch($, base, e.args) }))
 
-    const cfg = await effective($, base)
-    const s = normalizeState(await read($, stateAtom))
-    const log = await read($, logAtom)
-    const lines = [
-      `autoswitch: modo ${cfg.mode}, padrão ${cfg.defaultTier}, faixa ${cfg.minTier} a ${cfg.maxTier}`,
-      `trocas: ${s.switches}, turnos medidos: ${s.turns} (haiku ${s.turnsByTier.haiku}, sonnet ${s.turnsByTier.sonnet}, opus ${s.turnsByTier.opus})`,
-      `custo real: US$ ${s.costUsd.toFixed(2)} | no ${cfg.baselineTier}: US$ ${s.baselineUsd.toFixed(2)} | economia medida: US$ ${savedUsd(s).toFixed(2)} (preços de lista; a fatura pode diferir)`,
-      `economia estimada nas trocas: US$ ${s.estSavedUsd.toFixed(2)}`,
-      ...(log.length ? ['últimas decisões:', ...log.slice(0, 8).map(l => `  ${l}`)] : []),
-    ]
-    return { text: lines.join('\n') }
+  // Mesma ação por ferramenta: serve onde o app não roteia o slash command do plugin (ex.: Desktop).
+  on('tool.call', { tool: 'mcp__model-autoswitch__autoswitch' }, async ($, e) => {
+    const arg = typeof (e.input as { action?: unknown })?.action === 'string' ? (e.input as { action: string }).action : 'status'
+    return { result: await runAutoswitch($, base, arg) }
   })
 
   on('prompt.submit', async ($, e, next) => {
@@ -205,4 +203,24 @@ async function applyModel($: any, tier: Tier): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+/** Aplica on/off/dry-run (se pedido) e devolve o texto de status. */
+async function runAutoswitch($: any, base: Config, args: string): Promise<string> {
+  const arg = args.trim().toLowerCase()
+  if (arg === 'on' || arg === 'auto') await update($, modeAtom, () => 'auto')
+  else if (arg === 'off') await update($, modeAtom, () => 'off')
+  else if (arg === 'dry-run' || arg === 'dry') await update($, modeAtom, () => 'dry-run')
+
+  const cfg = await effective($, base)
+  const s = normalizeState(await read($, stateAtom))
+  const log = await read($, logAtom)
+  const lines = [
+    `autoswitch: modo ${cfg.mode}, padrão ${cfg.defaultTier}, faixa ${cfg.minTier} a ${cfg.maxTier}`,
+    `trocas: ${s.switches}, turnos medidos: ${s.turns} (haiku ${s.turnsByTier.haiku}, sonnet ${s.turnsByTier.sonnet}, opus ${s.turnsByTier.opus})`,
+    `custo real: US$ ${s.costUsd.toFixed(2)} | no ${cfg.baselineTier}: US$ ${s.baselineUsd.toFixed(2)} | economia medida: US$ ${savedUsd(s).toFixed(2)} (preços de lista; a fatura pode diferir)`,
+    `economia estimada nas trocas: US$ ${s.estSavedUsd.toFixed(2)}`,
+    ...(log.length ? ['últimas decisões:', ...log.slice(0, 8).map((l: string) => `  ${l}`)] : []),
+  ]
+  return lines.join('\n')
 }
