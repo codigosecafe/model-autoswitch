@@ -1,6 +1,6 @@
 {
   "name": "model-autoswitch",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Troca o modelo do Claude Code (haiku, sonnet, opus) por prompt para reduzir custo, protegendo o cache. Começa em dry-run.",
   "author": {
     "name": "Claudio Lino"
